@@ -14,7 +14,24 @@
  * limitations under the License.
  */
 
-package org.mitre.svmp.webrtc;
+package org.mitre.svmp.webrtc.http;
 
-public class Translator {
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.http.HttpServerCodec;
+
+public class TranslatorHttpServerInitializer extends ChannelInitializer<SocketChannel> {
+    
+    public TranslatorHttpServerInitializer() {
+    }
+
+    @Override
+    protected void initChannel(SocketChannel ch) throws Exception {
+        ChannelPipeline pipe = ch.pipeline();
+        
+        pipe.addLast(new HttpServerCodec());
+        pipe.addLast(new PeerConnectionServerHandler());
+    }
+
 }
