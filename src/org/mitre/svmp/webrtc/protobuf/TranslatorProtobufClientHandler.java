@@ -16,7 +16,10 @@
 
 package org.mitre.svmp.webrtc.protobuf;
 
+import java.util.concurrent.BlockingQueue;
+
 import org.mitre.svmp.protocol.SVMPProtocol;
+import org.mitre.svmp.protocol.SVMPProtocol.Request;
 import org.mitre.svmp.protocol.SVMPProtocol.Request.RequestType;
 
 import io.netty.channel.ChannelHandler;
@@ -26,22 +29,10 @@ import io.netty.channel.SimpleChannelInboundHandler;
 public class TranslatorProtobufClientHandler extends SimpleChannelInboundHandler<SVMPProtocol.Request> implements
         ChannelHandler {
 
-    @Override
-    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-        // TODO Auto-generated method stub
+    private BlockingQueue<SVMPProtocol.Request> receiveQueue;
 
-    }
-
-    @Override
-    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        // TODO Auto-generated method stub
-
+    public TranslatorProtobufClientHandler(BlockingQueue<Request> receiveQueue) {
+        this.receiveQueue = receiveQueue;
     }
 
     @Override
@@ -49,8 +40,8 @@ public class TranslatorProtobufClientHandler extends SimpleChannelInboundHandler
         // should be a Request with a WebRTCMessage inside it
         // ignore anything else
         if (msg.getType() == RequestType.WEBRTC && msg.hasWebrtcMsg()) {
-            // TODO
-            // translate it to JSON and send out the HTTP side to the "wait" connection
+            // just queue it, let the HTTP side deal with the JSON translation
+            receiveQueue.put(msg);
         }
     }
 

@@ -16,16 +16,56 @@
 
 package org.mitre.svmp.webrtc.protobuf;
 
+import java.util.concurrent.BlockingQueue;
+
+import org.mitre.svmp.protocol.SVMPProtocol;
+
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
+
 public class TranslatorProtobufClient {
     private final String host;
     private final int port;
+    
+    private BlockingQueue<SVMPProtocol.Response> sendQueue;
+    private BlockingQueue<SVMPProtocol.Request> receiveQueue;
 
-    public TranslatorProtobufClient(String host, int port) {
+    public TranslatorProtobufClient(String host, int port, 
+            BlockingQueue<SVMPProtocol.Response> sendQueue, 
+            BlockingQueue<SVMPProtocol.Request> receiveQueue) 
+    {
         this.host = host;
         this.port = port;
+        this.sendQueue = sendQueue;
+        this.receiveQueue = receiveQueue;
     }
-    
+
     public void run() throws Exception {
-        
+        EventLoopGroup group = new NioEventLoopGroup();
+
+        try {
+            Bootstrap b = new Bootstrap()
+                    .group(group)
+                    .channel(NioSocketChannel.class)
+                    .handler(new TranslatorProtobufClientInitializer(receiveQueue));
+
+            Channel ch = b.connect(host, port).sync().channel();
+
+            ChannelFuture lastWriteFuture = null;
+            while (true) {
+                lastWriteFuture = ch.writeAndFlush(sendQueue.take());
+            }
+// unreachable until we add a way to break the while loop
+//            if (lastWriteFuture != null) {
+//                lastWriteFuture.sync();
+//            }
+        } finally {
+            // Free resources from EventLoopGroup
+            group.shutdownGracefully();
+        }
     }
 }

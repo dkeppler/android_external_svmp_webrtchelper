@@ -16,11 +16,14 @@
 
 package org.mitre.svmp.webrtc;
 
+import java.util.concurrent.BlockingQueue;
+
+import org.mitre.svmp.protocol;
 import org.mitre.svmp.webrtc.http.TranslatorHttpServer;
 import org.mitre.svmp.webrtc.protobuf.TranslatorProtobufClient;
 
 public class Main {
-
+    
     // Port we'll listen on for HTTP/JSON inputs
     public static int DEFAULT_LISTEN_PORT = 8888;
     
@@ -30,13 +33,15 @@ public class Main {
     public static int DEFAULT_DEST_PORT = 7675;
     
     public static void main(String[] args) throws Exception {
+        // assign some message queues so the two sides can pass work to each other
+        BlockingQueue<SVMPProtocol.Response> sendQueue = new LinkedBlockingQueue<SVMPProtocol.Response>();
+        BlockingQueue<SVMPProtocol.Request> receiveQueue = new LinkedBlockingQueue<SVMPProtocol.Request>();
+        
         // start up two threads for each side of the proxy
         TranslatorHttpServer httpSide = new TranslatorHttpServer(DEFAULT_LISTEN_PORT);
-        TranslatorProtobufClient protobufSide = new TranslatorProtobufClient(DEFAULT_DEST_HOST, DEFAULT_DEST_PORT);
+        TranslatorProtobufClient protobufSide = 
+                new TranslatorProtobufClient(DEFAULT_DEST_HOST, DEFAULT_DEST_PORT, sendQueue, receiveQueue);
 
-        // assign some message queues so the two sides can pass work to each other
-        // TODO
-        
         protobufSide.run();
         httpSide.run();
     }

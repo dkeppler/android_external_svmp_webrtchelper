@@ -16,7 +16,10 @@
 
 package org.mitre.svmp.webrtc.protobuf;
 
+import java.util.concurrent.BlockingQueue;
+
 import org.mitre.svmp.protocol.SVMPProtocol;
+import org.mitre.svmp.protocol.SVMPProtocol.Request;
 
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -27,7 +30,13 @@ import io.netty.handler.codec.protobuf.ProtobufVarint32FrameDecoder;
 import io.netty.handler.codec.protobuf.ProtobufVarint32LengthFieldPrepender;
 
 public class TranslatorProtobufClientInitializer extends ChannelInitializer<SocketChannel> {
+
+    private BlockingQueue<SVMPProtocol.Request> receiveQueue;
     
+    public TranslatorProtobufClientInitializer(BlockingQueue<Request> receiveQueue) {
+        this.receiveQueue = receiveQueue;
+    }
+
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
         ChannelPipeline pipe = ch.pipeline();
@@ -38,6 +47,6 @@ public class TranslatorProtobufClientInitializer extends ChannelInitializer<Sock
         pipe.addLast("delimiterEncode", new ProtobufVarint32LengthFieldPrepender());
         pipe.addLast("protobufEncode", new ProtobufEncoder());
         
-        pipe.addLast("protobufClientHandler", new TranslatorProtobufClientHandler());
+        pipe.addLast("protobufClientHandler", new TranslatorProtobufClientHandler(receiveQueue));
     }
 }
