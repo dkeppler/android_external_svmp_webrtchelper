@@ -16,6 +16,12 @@
 
 package org.mitre.svmp.webrtc.http;
 
+import java.util.concurrent.BlockingQueue;
+
+import org.mitre.svmp.protocol.SVMPProtocol;
+import org.mitre.svmp.protocol.SVMPProtocol.Request;
+import org.mitre.svmp.protocol.SVMPProtocol.Response;
+
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -23,7 +29,17 @@ import io.netty.handler.codec.http.HttpServerCodec;
 
 public class TranslatorHttpServerInitializer extends ChannelInitializer<SocketChannel> {
     
-    public TranslatorHttpServerInitializer() {
+    // names are from the protobuf side's perspective, so
+    //    sendQueue    = from the HTTP side, out the protobuf side
+    //    receiveQueue = in the protobuf side, out the HTTP side 
+    private BlockingQueue<SVMPProtocol.Response> sendQueue;
+    private BlockingQueue<SVMPProtocol.Request> receiveQueue;
+    
+    public TranslatorHttpServerInitializer(BlockingQueue<Response> sendQueue, 
+            BlockingQueue<Request> receiveQueue) 
+    {
+        this.sendQueue = sendQueue;
+        this.receiveQueue = receiveQueue;
     }
 
     @Override
@@ -31,7 +47,7 @@ public class TranslatorHttpServerInitializer extends ChannelInitializer<SocketCh
         ChannelPipeline pipe = ch.pipeline();
         
         pipe.addLast(new HttpServerCodec());
-        pipe.addLast(new PeerConnectionServerHandler());
+        pipe.addLast(new PeerConnectionServerHandler(sendQueue, receiveQueue));
     }
 
 }

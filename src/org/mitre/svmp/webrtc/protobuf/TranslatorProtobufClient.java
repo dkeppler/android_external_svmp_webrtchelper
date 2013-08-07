@@ -31,6 +31,9 @@ public class TranslatorProtobufClient {
     private final String host;
     private final int port;
     
+    // names are from the protobuf side's perspective, so
+    //    sendQueue    = from the HTTP side, out the protobuf side
+    //    receiveQueue = in the protobuf side, out the HTTP side 
     private BlockingQueue<SVMPProtocol.Response> sendQueue;
     private BlockingQueue<SVMPProtocol.Request> receiveQueue;
 

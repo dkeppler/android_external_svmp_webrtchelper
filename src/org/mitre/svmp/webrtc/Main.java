@@ -17,8 +17,9 @@
 package org.mitre.svmp.webrtc;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
-import org.mitre.svmp.protocol;
+import org.mitre.svmp.protocol.SVMPProtocol;
 import org.mitre.svmp.webrtc.http.TranslatorHttpServer;
 import org.mitre.svmp.webrtc.protobuf.TranslatorProtobufClient;
 
@@ -34,11 +35,14 @@ public class Main {
     
     public static void main(String[] args) throws Exception {
         // assign some message queues so the two sides can pass work to each other
+        // names are from the protobuf side's perspective, so
+        //    sendQueue    = from the HTTP side, out the protobuf side
+        //    receiveQueue = in the protobuf side, out the HTTP side 
         BlockingQueue<SVMPProtocol.Response> sendQueue = new LinkedBlockingQueue<SVMPProtocol.Response>();
         BlockingQueue<SVMPProtocol.Request> receiveQueue = new LinkedBlockingQueue<SVMPProtocol.Request>();
         
         // start up two threads for each side of the proxy
-        TranslatorHttpServer httpSide = new TranslatorHttpServer(DEFAULT_LISTEN_PORT);
+        TranslatorHttpServer httpSide = new TranslatorHttpServer(DEFAULT_LISTEN_PORT, sendQueue, receiveQueue);
         TranslatorProtobufClient protobufSide = 
                 new TranslatorProtobufClient(DEFAULT_DEST_HOST, DEFAULT_DEST_PORT, sendQueue, receiveQueue);
 

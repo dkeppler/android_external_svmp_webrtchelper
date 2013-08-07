@@ -16,6 +16,11 @@
 
 package org.mitre.svmp.webrtc.http;
 
+import java.util.concurrent.BlockingQueue;
+
+import org.mitre.svmp.protocol.SVMPProtocol;
+import org.mitre.svmp.protocol.SVMPProtocol.Request;
+import org.mitre.svmp.protocol.SVMPProtocol.Response;
 import org.mitre.svmp.webrtc.http.TranslatorHttpServerInitializer;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -28,10 +33,20 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 public class TranslatorHttpServer {
 
     private final int listenPort;
+    
+    // names are from the protobuf side's perspective, so
+    //    sendQueue    = from the HTTP side, out the protobuf side
+    //    receiveQueue = in the protobuf side, out the HTTP side 
+    private BlockingQueue<SVMPProtocol.Response> sendQueue;
+    private BlockingQueue<SVMPProtocol.Request> receiveQueue;
 
-    public TranslatorHttpServer(int listenPort) {
+    public TranslatorHttpServer(int listenPort, 
+            BlockingQueue<Response> sendQueue, 
+            BlockingQueue<Request> receiveQueue) 
+    {
         this.listenPort = listenPort;
-
+        this.sendQueue = sendQueue;
+        this.receiveQueue = receiveQueue;
     }
 
     public void run() throws Exception {
@@ -42,9 +57,13 @@ public class TranslatorHttpServer {
             ServerBootstrap b = new ServerBootstrap();
             b.option(ChannelOption.SO_BACKLOG, 10);
             b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
-                    .childHandler(new TranslatorHttpServerInitializer());
+                    .childHandler(new TranslatorHttpServerInitializer(sendQueue, receiveQueue));
 
             Channel ch = b.bind(listenPort).sync().channel();
+            
+            // read from the receive queue, translate into JSON, send to the "wait" connection
+            // could make that driven through the handler probably
+            
             ch.closeFuture().sync();
         } finally {
             bossGroup.shutdownGracefully();
