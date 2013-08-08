@@ -48,29 +48,35 @@ public class TranslatorProtobufClient implements Runnable {
     }
 
     public void run() {
-        EventLoopGroup group = new NioEventLoopGroup();
+        while (true) {
+            EventLoopGroup group = new NioEventLoopGroup();
 
-        try {
-            Bootstrap b = new Bootstrap()
-                    .group(group)
-                    .channel(NioSocketChannel.class)
-                    .handler(new TranslatorProtobufClientInitializer(receiveQueue));
-
-            Channel ch = b.connect(host, port).sync().channel();
-
-            ChannelFuture lastWriteFuture = null;
-            while (true) {
-                lastWriteFuture = ch.writeAndFlush(sendQueue.take());
+            try {
+                Bootstrap b = new Bootstrap()
+                        .group(group)
+                        .channel(NioSocketChannel.class)
+                        .handler(new TranslatorProtobufClientInitializer(receiveQueue));
+    
+                Channel ch = b.connect(host, port).sync().channel();
+    
+                ChannelFuture lastWriteFuture = null;
+                while (true) {
+                    lastWriteFuture = ch.writeAndFlush(sendQueue.take());
+                }
+                // unreachable until we add a way to break the while loop
+                //if (lastWriteFuture != null) {
+                //    lastWriteFuture.sync();
+                //}
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+            } finally {
+                // Free resources from EventLoopGroup
+                group.shutdownGracefully();
             }
-// unreachable until we add a way to break the while loop
-//            if (lastWriteFuture != null) {
-//                lastWriteFuture.sync();
-//            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // Free resources from EventLoopGroup
-            group.shutdownGracefully();
+            try {
+                System.out.println("Protobuf client waiting 5 seconds before reconnecting to upstream");
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {}
         }
     }
 }
