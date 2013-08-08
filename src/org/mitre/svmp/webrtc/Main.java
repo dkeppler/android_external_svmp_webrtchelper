@@ -46,7 +46,13 @@ public class Main {
         TranslatorProtobufClient protobufSide = 
                 new TranslatorProtobufClient(DEFAULT_DEST_HOST, DEFAULT_DEST_PORT, sendQueue, receiveQueue);
 
-        protobufSide.run();
-        httpSide.run();
+        Thread http = new Thread(httpSide);
+        Thread protobuf = new Thread(protobufSide);
+        
+        http.start();
+        protobuf.start();
+        
+        http.join();
+        protobuf.join();
     }
 }

@@ -27,7 +27,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-public class TranslatorProtobufClient {
+public class TranslatorProtobufClient implements Runnable {
     private final String host;
     private final int port;
     
@@ -47,7 +47,7 @@ public class TranslatorProtobufClient {
         this.receiveQueue = receiveQueue;
     }
 
-    public void run() throws Exception {
+    public void run() {
         EventLoopGroup group = new NioEventLoopGroup();
 
         try {
@@ -66,6 +66,8 @@ public class TranslatorProtobufClient {
 //            if (lastWriteFuture != null) {
 //                lastWriteFuture.sync();
 //            }
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
             // Free resources from EventLoopGroup
             group.shutdownGracefully();

@@ -25,6 +25,8 @@ import org.mitre.svmp.protocol.SVMPProtocol.Response;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.http.HttpResponseDecoder;
+import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.codec.http.HttpServerCodec;
 
 public class TranslatorHttpServerInitializer extends ChannelInitializer<SocketChannel> {
@@ -46,6 +48,8 @@ public class TranslatorHttpServerInitializer extends ChannelInitializer<SocketCh
     protected void initChannel(SocketChannel ch) throws Exception {
         ChannelPipeline pipe = ch.pipeline();
         
+//        pipe.addLast(new HttpResponseDecoder());
+//        pipe.addLast("encoder", new HttpResponseEncoder());
         pipe.addLast(new HttpServerCodec());
         pipe.addLast(new PeerConnectionServerHandler(sendQueue, receiveQueue));
     }

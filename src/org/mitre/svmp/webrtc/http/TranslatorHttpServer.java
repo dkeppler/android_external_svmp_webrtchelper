@@ -30,7 +30,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
-public class TranslatorHttpServer {
+public class TranslatorHttpServer implements Runnable {
 
     private final int listenPort;
     
@@ -49,13 +49,13 @@ public class TranslatorHttpServer {
         this.receiveQueue = receiveQueue;
     }
 
-    public void run() throws Exception {
+    public void run() {
         // Configure the server.
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             ServerBootstrap b = new ServerBootstrap();
-            b.option(ChannelOption.SO_BACKLOG, 10);
+            b.option(ChannelOption.SO_BACKLOG, 1024);
             b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
                     .childHandler(new TranslatorHttpServerInitializer(sendQueue, receiveQueue));
 
@@ -65,10 +65,11 @@ public class TranslatorHttpServer {
             // could make that driven through the handler probably
             
             ch.closeFuture().sync();
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
     }
-
 }
